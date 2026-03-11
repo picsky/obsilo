@@ -388,10 +388,10 @@ async function fetchEmbeddingModels(
     }
 
     // custom — OpenAI-compatible endpoint
-    const base = (baseUrl || '').replace(/\/+$/, '');
+    const root = (baseUrl || '').replace(/\/v1\/?$/, '').replace(/\/+$/, '');
     const headers: Record<string, string> = {};
     if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
-    const res = await req(`${base}/v1/models`, headers);
+    const res = await req(`${root}/v1/models`, headers);
     if (res.status !== 200) throw new Error(`HTTP ${res.status}`);
     const EMBED_RE = /embed/i;
     const all = ((res.json.data ?? []) as ApiModelEntry[]).map((m) => ({ id: m.id as string, label: m.id as string }));

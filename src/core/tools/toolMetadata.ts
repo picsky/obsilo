@@ -364,6 +364,16 @@ export const TOOL_METADATA: Record<string, ToolMeta> = {
         whenToUse: 'When the user wants to always include certain context (project rules, style guides).',
     },
 
+    // ── Image Generation ───────────────────────────────────────────────────
+    generate_image: {
+        group: 'edit', label: 'Generate Image', icon: 'image',
+        signature: 'generate_image(prompt, filename?, note_path?, size?)',
+        description: 'Generate an image via AI image generation API and save it to the vault. Returns a Markdown embed to insert into the note.',
+        example: 'generate_image("A serene mountain landscape at sunset, watercolor style", "sunset-mountain.png", "Travel/japan-trip.md")',
+        whenToUse: 'When the user wants illustrations, diagrams, or visual content in their notes. Only available when imageGen is enabled.',
+        commonMistakes: 'Forgetting to include note_path — without it the image saves to vault root instead of alongside the note.',
+    },
+
     // ── MCP ───────────────────────────────────────────────────────────────
     use_mcp_tool: {
         group: 'mcp', label: 'MCP Tool', icon: 'plug-2',

@@ -3,10 +3,14 @@
  * Adapted from Kilo Code's capabilities.ts for Obsidian context.
  */
 
-export function getCapabilitiesSection(webEnabled?: boolean): string {
+export function getCapabilitiesSection(webEnabled?: boolean, imageGenEnabled?: boolean): string {
     const webCapability = webEnabled
         ? '- You can fetch web pages and search the internet to bring external information into the vault.'
         : '- Web search is available but not yet configured. You can enable it yourself via update_settings when the user requests internet research.';
+
+    const imageCapability = imageGenEnabled
+        ? '- You can generate images using AI (generate_image tool) and embed them in notes. IMPORTANT: Only use generate_image when you are writing content to a note file (write_file / edit_file / append_to_file). Do NOT generate images for chat-only responses — this wastes API costs. When writing a note, proactively generate illustrations at appropriate points to make it visually rich. Always provide a descriptive English prompt and set note_path to the target note path.'
+        : '';
 
     return `====
 
@@ -18,6 +22,7 @@ CAPABILITIES
 - You can find notes by meaning using semantic search (vector similarity over the vault index), not just keyword matching. This makes you effective at answering "what do I have about X?" questions.
 - You can visualize vault structure as Canvas files and create Bases database views for filtered, sorted overviews of notes.
 ${webCapability}
+${imageCapability}
 - For complex tasks, you can break work into steps with a visible task plan, and delegate subtasks to sub-agents running in parallel.
 - You remember the user across sessions through a persistent memory system (profile, projects, patterns) that grows over time.
 - You can leverage Obsidian plugins as Skills — both core plugins (Daily Notes, Canvas, Templates...) and community plugins the user has installed. Skills are instruction sets that teach you how to use plugin commands and APIs.

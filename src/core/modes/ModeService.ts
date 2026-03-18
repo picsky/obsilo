@@ -121,6 +121,11 @@ export class ModeService {
             allowed.delete('web_search');
             allowed.delete('web_fetch');
         }
+        // Remove image generation tool when imageGen is disabled.
+        const imageGenDisabled = !this.plugin.settings.imageGen?.enabled;
+        if (imageGenDisabled) {
+            allowed.delete('generate_image');
+        }
         return this.toolRegistry
             .getAllTools()
             .filter((t) => allowed.has(t.name))

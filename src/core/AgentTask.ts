@@ -296,6 +296,7 @@ export class AgentTask {
 
         const rebuildPromptCache = () => {
             const webEnabled = this.modeService?.isWebEnabled() ?? false;
+            const imageGenEnabled = this.toolRegistry.plugin.settings.imageGen?.enabled === true;
             cachedSystemPrompt = buildSystemPromptForMode({
                 mode: activeMode,
                 globalCustomInstructions,
@@ -308,6 +309,7 @@ export class AgentTask {
                 pluginSkillsSection,
                 isSubtask: this.depth > 0,
                 webEnabled,
+                imageGenEnabled,
                 recipesSection,
                 selfAuthoredSkillsSection,
                 configDir: configDir ?? this.toolRegistry.plugin.app.vault.configDir,

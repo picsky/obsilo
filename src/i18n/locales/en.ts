@@ -175,6 +175,30 @@ export const en: Translations = {
     'settings.webSearch.tavilyPlaceholder': 'tvly-...',
 
     // =========================================================================
+    // Settings — Image Generation Tab
+    // =========================================================================
+    'settings.tab.imageGen': 'Image generation',
+    'settings.imageGen.introTitle': 'AI Image Generation',
+    'settings.imageGen.introDesc': 'Generate images with AI and embed them in your notes. Images are only generated when the agent writes content to a note file — never for chat-only responses.',
+    'settings.imageGen.desc': 'Configure an OpenAI-compatible image generation endpoint. The agent will proactively add illustrations when creating or editing notes.',
+    'settings.imageGen.headingGeneral': 'General',
+    'settings.imageGen.headingApi': 'API configuration',
+    'settings.imageGen.enable': 'Enable image generation',
+    'settings.imageGen.enableDesc': 'Allow the agent to generate images when writing notes. Turn off to disable all image generation.',
+    'settings.imageGen.baseUrl': 'Base URL',
+    'settings.imageGen.baseUrlDesc': 'OpenAI-compatible image generation API endpoint (e.g. https://api.siliconflow.cn/v1).',
+    'settings.imageGen.baseUrlPlaceholder': 'https://api.openai.com/v1',
+    'settings.imageGen.apiKey': 'API key',
+    'settings.imageGen.apiKeyDesc': 'API key for the image generation service.',
+    'settings.imageGen.apiKeyPlaceholder': 'sk-...',
+    'settings.imageGen.model': 'Model',
+    'settings.imageGen.modelDesc': 'Model identifier (e.g. "dall-e-3", "black-forest-labs/FLUX.1-schnell").',
+    'settings.imageGen.modelPlaceholder': 'dall-e-3',
+    'settings.imageGen.size': 'Image size',
+    'settings.imageGen.sizeDesc': 'Default image dimensions. Provider-dependent (e.g. "1024x1024", "512x512").',
+    'settings.imageGen.sizePlaceholder': '1024x1024',
+
+    // =========================================================================
     // Settings — MCP Tab
     // =========================================================================
     'settings.mcp.introTitle': 'Model Context Protocol',

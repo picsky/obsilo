@@ -64,6 +64,8 @@ import { ExecuteRecipeTool } from './agent/ExecuteRecipeTool';
 // Settings & Model configuration (Onboarding)
 import { UpdateSettingsTool } from './agent/UpdateSettingsTool';
 import { ConfigureModelTool } from './agent/ConfigureModelTool';
+// Image Generation
+import { GenerateImageTool } from './image/GenerateImageTool';
 // MCP tool
 import { UseMcpToolTool } from './mcp/UseMcpToolTool';
 import type { McpClient } from '../mcp/McpClient';
@@ -179,6 +181,8 @@ export class ToolRegistry {
         // Settings & Model configuration (Onboarding)
         this.register(new UpdateSettingsTool(this.plugin));
         this.register(new ConfigureModelTool(this.plugin));
+        // Image Generation
+        this.register(new GenerateImageTool(this.plugin));
         // Self-Development (Phase 1)
         if (ringBuffer) {
             this.register(new ReadAgentLogsTool(this.plugin, ringBuffer));

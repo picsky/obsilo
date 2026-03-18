@@ -62,6 +62,7 @@ export interface SystemPromptConfig {
     pluginSkillsSection?: string;
     isSubtask?: boolean;
     webEnabled?: boolean;
+    imageGenEnabled?: boolean;
     recipesSection?: string;
     configDir: string;
     selfAuthoredSkillsSection?: string;
@@ -133,12 +134,18 @@ export function buildSystemPromptForMode(
         // Legacy positional form
         mode = configOrMode as ModeConfig;
     }
+
+    // Resolve imageGenEnabled from config object (not part of legacy positional API)
+    const imageGenEnabled = ('mode' in configOrMode && 'imageGenEnabled' in configOrMode)
+        ? (configOrMode as SystemPromptConfig).imageGenEnabled
+        : undefined;
+
     const sections: string[] = [
         // 1. Date/time + 2. Vault context (combined at top)
         getDateTimeSection(includeTime) + getVaultContextSection(),
 
         // 3. Capabilities (high-level summary)
-        getCapabilitiesSection(webEnabled),
+        getCapabilitiesSection(webEnabled, imageGenEnabled),
 
         // 4. User memory (conditional — omit for subtasks, parent already applied)
         isSubtask ? '' : getMemorySection(memoryContext),

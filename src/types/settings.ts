@@ -343,6 +343,23 @@ export interface WebToolsSettings {
 }
 
 // ---------------------------------------------------------------------------
+// Image Generation Settings
+// ---------------------------------------------------------------------------
+
+export interface ImageGenSettings {
+    /** Master toggle — when false, generate_image tool is hidden from LLM */
+    enabled: boolean;
+    /** OpenAI-compatible base URL for image generation API (e.g. https://api.siliconflow.cn/v1) */
+    baseUrl: string;
+    /** API key for the image generation service */
+    apiKey: string;
+    /** Model identifier (e.g. "dall-e-3", "black-forest-labs/FLUX.1-schnell") */
+    model: string;
+    /** Image size — provider-dependent (e.g. "1024x1024", "512x512") */
+    size: string;
+}
+
+// ---------------------------------------------------------------------------
 // Advanced API Settings (Sprint 1.5)
 // ---------------------------------------------------------------------------
 
@@ -484,6 +501,9 @@ export interface ObsidianAgentSettings {
 
     // Web Tools (Phase 1.1)
     webTools: WebToolsSettings;
+
+    // Image Generation
+    imageGen: ImageGenSettings;
 
     // Chat History & Memory
     /** Enable persistent chat history (conversations saved in plugin directory) */
@@ -699,6 +719,14 @@ export const DEFAULT_SETTINGS: ObsidianAgentSettings = {
         provider: 'none',
         braveApiKey: '',
         tavilyApiKey: '',
+    },
+
+    imageGen: {
+        enabled: false,
+        baseUrl: '',
+        apiKey: '',
+        model: '',
+        size: '1024x1024',
     },
 
     enableChatHistory: true,

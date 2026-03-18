@@ -7,10 +7,82 @@
  */
 
 import OpenAI from 'openai';
+import { requestUrl } from 'obsidian';
 import type { LLMProvider } from '../../types/settings';
 import type { ApiHandler, ApiStream, ApiStreamChunk, MessageParam, ModelInfo } from '../types';
 import type { ToolDefinition } from '../../core/tools/types';
 import { getModelContextWindow } from '../../types/model-registry';
+
+// ---------------------------------------------------------------------------
+// obsidianFetch — drop-in fetch replacement that delegates to Obsidian's
+// requestUrl (runs in the main process, bypassing CORS).
+// Inspired by obsidian-copilot's safeFetch implementation.
+// ---------------------------------------------------------------------------
+
+async function obsidianFetch(
+    input: RequestInfo | URL,
+    init?: RequestInit,
+): Promise<Response> {
+    const url = typeof input === 'string'
+        ? input
+        : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+    const method = (init?.method ?? 'GET').toUpperCase();
+    const methodsWithBody = ['POST', 'PUT', 'PATCH'];
+
+    // Normalize headers into a plain record
+    const headers: Record<string, string> = {};
+    if (init?.headers) {
+        const h = new Headers(init.headers);
+        h.forEach((v, k) => { headers[k] = v; });
+    }
+
+    // Remove content-length: requestUrl calculates it internally.
+    // Keeping a stale value causes Electron's ERR_INVALID_ARGUMENT.
+    delete headers['content-length'];
+
+    const res = await requestUrl({
+        url,
+        method,
+        contentType: 'application/json',
+        headers,
+        ...(methodsWithBody.includes(method) && { body: init?.body?.toString() }),
+        throw: false,
+    });
+
+    // Build a Response-like object the OpenAI SDK can consume.
+    // Obsidian's requestUrl buffers the full response (no streaming).
+    const resText: string = res.text;
+    const resHeaders = new Headers(res.headers);
+
+    const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+            controller.enqueue(new TextEncoder().encode(resText));
+            controller.close();
+        },
+    });
+
+    return {
+        ok: res.status >= 200 && res.status < 300,
+        status: res.status,
+        statusText: String(res.status),
+        headers: resHeaders,
+        url,
+        type: 'basic' as ResponseType,
+        redirected: false,
+        body,
+        bodyUsed: false,
+        json: () => Promise.resolve(res.json),
+        text: () => Promise.resolve(resText),
+        arrayBuffer: () => Promise.resolve(res.arrayBuffer),
+        bytes: () => Promise.resolve(new TextEncoder().encode(resText)),
+        blob: () => { throw new Error('not implemented'); },
+        formData: () => { throw new Error('not implemented'); },
+        clone: () => { throw new Error('not implemented'); },
+    } as Response;
+}
 
 // ---------------------------------------------------------------------------
 // OpenAI REST API types (subset we need)
@@ -90,6 +162,7 @@ export class OpenAiProvider implements ApiHandler {
             baseURL,
             dangerouslyAllowBrowser: true,
             defaultHeaders,
+            fetch: obsidianFetch,
         });
     }
 

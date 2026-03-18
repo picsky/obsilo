@@ -69,7 +69,9 @@ export type ToolName =
     // Self-Development (Phase 3: Expression evaluation)
     | 'evaluate_expression'
     // Self-Development (Phase 4: Core Self-Modification)
-    | 'manage_source';
+    | 'manage_source'
+    // Image Generation
+    | 'generate_image';
 
 /**
  * Tool use request from LLM

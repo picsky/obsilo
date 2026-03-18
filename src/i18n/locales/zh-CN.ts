@@ -175,6 +175,30 @@ export const zhCN: Translations = {
     'settings.webSearch.tavilyPlaceholder': 'tvly-...',
 
     // =========================================================================
+    // Settings — Image Generation Tab
+    // =========================================================================
+    'settings.tab.imageGen': '图片生成',
+    'settings.imageGen.introTitle': 'AI 图片生成',
+    'settings.imageGen.introDesc': '使用 AI 生成图片并嵌入笔记。图片仅在智能体写入笔记文件时生成，不会在纯聊天回复中生成，以节省成本。',
+    'settings.imageGen.desc': '配置 OpenAI 兼容的图片生成端点。开启后，智能体在创建或编辑笔记时会主动生成配图。',
+    'settings.imageGen.headingGeneral': '常规',
+    'settings.imageGen.headingApi': 'API 配置',
+    'settings.imageGen.enable': '启用图片生成',
+    'settings.imageGen.enableDesc': '允许智能体在写入笔记时生成图片。关闭后将禁用所有图片生成功能。',
+    'settings.imageGen.baseUrl': '基础 URL',
+    'settings.imageGen.baseUrlDesc': 'OpenAI 兼容的图片生成 API 端点（如 https://api.siliconflow.cn/v1）。',
+    'settings.imageGen.baseUrlPlaceholder': 'https://api.openai.com/v1',
+    'settings.imageGen.apiKey': 'API 密钥',
+    'settings.imageGen.apiKeyDesc': '图片生成服务的 API 密钥。',
+    'settings.imageGen.apiKeyPlaceholder': 'sk-...',
+    'settings.imageGen.model': '模型',
+    'settings.imageGen.modelDesc': '模型标识符（如 "dall-e-3"、"black-forest-labs/FLUX.1-schnell"）。',
+    'settings.imageGen.modelPlaceholder': 'dall-e-3',
+    'settings.imageGen.size': '图片尺寸',
+    'settings.imageGen.sizeDesc': '默认图片尺寸，取决于服务商（如 "1024x1024"、"512x512"）。',
+    'settings.imageGen.sizePlaceholder': '1024x1024',
+
+    // =========================================================================
     // Settings — MCP Tab
     // =========================================================================
     'settings.mcp.introTitle': '模型上下文协议',

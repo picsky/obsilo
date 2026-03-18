@@ -6,6 +6,7 @@ import { t } from '../i18n';
 import { ModelsTab }      from './settings/ModelsTab';
 import { EmbeddingsTab }  from './settings/EmbeddingsTab';
 import { WebSearchTab }   from './settings/WebSearchTab';
+import { ImageGenTab }    from './settings/ImageGenTab';
 import { ModesTab }       from './settings/ModesTab';
 import { PermissionsTab } from './settings/PermissionsTab';
 import { LoopTab }        from './settings/LoopTab';
@@ -169,6 +170,7 @@ export class AgentSettingsTab extends PluginSettingTab {
                 { id: 'models',      label: t('settings.tab.models')     },
                 { id: 'embeddings',  label: t('settings.tab.embeddings') },
                 { id: 'web-search',  label: t('settings.tab.webSearch') },
+                { id: 'image-gen',   label: t('settings.tab.imageGen')  },
                 { id: 'mcp-servers', label: t('settings.tab.mcp')        },
             ],
             this.activeProvidersSubTab,
@@ -179,6 +181,7 @@ export class AgentSettingsTab extends PluginSettingTab {
         if (this.activeProvidersSubTab === 'models')      new ModelsTab(this.plugin, this.app, rerender).build(content);
         if (this.activeProvidersSubTab === 'embeddings')  new EmbeddingsTab(this.plugin, this.app, rerender).build(content);
         if (this.activeProvidersSubTab === 'web-search')  new WebSearchTab(this.plugin, this.app, rerender).build(content);
+        if (this.activeProvidersSubTab === 'image-gen')   new ImageGenTab(this.plugin, this.app, rerender).build(content);
         if (this.activeProvidersSubTab === 'mcp-servers') new McpTab(this.plugin, this.app, rerender).build(content);
     }
 

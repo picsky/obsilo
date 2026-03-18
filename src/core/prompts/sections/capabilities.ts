@@ -9,7 +9,7 @@ export function getCapabilitiesSection(webEnabled?: boolean, imageGenEnabled?: b
         : '- Web search is available but not yet configured. You can enable it yourself via update_settings when the user requests internet research.';
 
     const imageCapability = imageGenEnabled
-        ? '- You can generate images using AI (generate_image tool) and embed them in notes. IMPORTANT: Only use generate_image when you are writing content to a note file (write_file / edit_file / append_to_file). Do NOT generate images for chat-only responses — this wastes API costs. When writing a note, proactively generate illustrations at appropriate points to make it visually rich. Always provide a descriptive English prompt and set note_path to the target note path.'
+        ? '- You can generate images using AI (generate_image tool) and embed them in notes. IMPORTANT: Only use generate_image when you are writing content to a note file (write_file / edit_file / append_to_file). Do NOT generate images for chat-only responses — this wastes API costs. When writing a note, proactively generate illustrations at appropriate points to make it visually rich. Write the image prompt in the same language as the note content (Chinese notes use Chinese prompts, English notes use English prompts). For STYLE CONSISTENCY: when generating multiple images for the same note, decide on a unified visual style for the first image (e.g. "扁平矢量插画，柔和渐变色彩，浅色背景") and include the same style description in every subsequent image prompt. This ensures all illustrations in one article look cohesive. A global style suffix is automatically appended — do not repeat it, but do maintain your own per-article style keywords. Set note_path to the target note path.'
         : '';
 
     return `====

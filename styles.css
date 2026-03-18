@@ -460,6 +460,14 @@
     color: var(--interactive-accent-hover);
 }
 
+/* Image generation toggle — active state */
+.image-gen-toggle-button.image-gen-toggle-active {
+    color: var(--interactive-accent);
+}
+.image-gen-toggle-button.image-gen-toggle-active:hover {
+    color: var(--interactive-accent-hover);
+}
+
 .toolbar-icon {
     display: flex;
     align-items: center;
@@ -1411,6 +1419,26 @@
 .cim-test-icon svg { width: 14px; height: 14px; }
 .cim-test-hint { font-size: 10px; color: var(--color-yellow); margin-top: 4px; }
 .cim-test-detail { font-size: 10px; color: var(--text-muted); margin-top: 4px; word-break: break-word; }
+
+/* Image generation test connection */
+.agent-settings-test-section { display: flex; align-items: flex-start; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.agent-settings-test-btn {
+    flex-shrink: 0;
+    font-size: 12px;
+    padding: 4px 12px;
+    background: var(--interactive-normal);
+    border: 1px solid var(--interactive-border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+.agent-settings-test-btn:hover { background: var(--interactive-hover); }
+.agent-settings-test-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.agent-settings-test-result { display: none; font-size: 11px; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.agent-settings-test-result:not(.agent-u-hidden) { display: flex; }
+.agent-settings-test-success { color: var(--color-green); }
+.agent-settings-test-error { color: var(--color-red); }
+.agent-settings-test-icon { display: inline-flex; align-items: center; flex-shrink: 0; }
+.agent-settings-test-icon svg { width: 14px; height: 14px; }
 
 .cim-actions { display: flex; gap: 6px; justify-content: flex-end; padding-top: 10px; border-top: 1px solid var(--background-modifier-border); }
 .cim-import-btn:disabled { opacity: 0.5; cursor: not-allowed; }

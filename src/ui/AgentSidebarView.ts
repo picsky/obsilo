@@ -74,6 +74,8 @@ export class AgentSidebarView extends ItemView {
     private toolPickerButton: HTMLElement | null = null;
     // Web search toggle button (globe icon)
     private webToggleButton: HTMLElement | null = null;
+    // Image generation toggle button (image icon)
+    private imageGenToggleButton: HTMLElement | null = null;
     /** Manages tool/skill/workflow picker */
     private toolPicker!: ToolPickerPopover;
     /** Manages pending attachments and chip bar UI */
@@ -340,6 +342,15 @@ export class AgentSidebarView extends ItemView {
         this.webToggleButton.addEventListener('click', () => { void this.toggleWebSearch(); });
         this.updateWebToggleButton();
 
+        // Image generation toggle (image icon) — quick toggle for imageGen.enabled
+        this.imageGenToggleButton = toolbarLeft.createEl('button', {
+            cls: 'toolbar-button toolbar-ghost image-gen-toggle-button',
+            attr: { 'aria-label': t('ui.sidebar.toggleImageGen') },
+        });
+        setIcon(this.imageGenToggleButton.createSpan('toolbar-icon'), 'image');
+        this.imageGenToggleButton.addEventListener('click', () => { void this.toggleImageGen(); });
+        this.updateImageGenToggleButton();
+
         // Attach file button (ghost style)
         const attachBtn = toolbarLeft.createEl('button', {
             cls: 'toolbar-button toolbar-ghost attach-button',
@@ -563,6 +574,32 @@ export class AgentSidebarView extends ItemView {
         // Visual state: active (highlighted) or inactive (ghost)
         const isEnabled = this.plugin.settings.webTools?.enabled ?? false;
         this.webToggleButton.classList.toggle('web-toggle-active', isEnabled);
+    }
+
+    private async toggleImageGen(): Promise<void> {
+        const isEnabled = this.plugin.settings.imageGen?.enabled ?? false;
+        const newState = !isEnabled;
+        if (!this.plugin.settings.imageGen) {
+            this.plugin.settings.imageGen = { enabled: false, provider: 'openai', baseUrl: '', apiKey: '', model: '', size: '1024x1024', stylePrompt: '' };
+        }
+        this.plugin.settings.imageGen.enabled = newState;
+        await this.plugin.saveSettings();
+        this.updateImageGenToggleButton();
+
+        if (newState && !this.plugin.settings.imageGen.baseUrl) {
+            new Notice(t('notice.imageGenEnabled'));
+        }
+    }
+
+    private updateImageGenToggleButton(): void {
+        if (!this.imageGenToggleButton) return;
+        // Only show when the active mode supports edit tools (image gen is in edit group)
+        const mode = this.modeService.getMode(this.plugin.settings.currentMode);
+        const modeHasEdit = mode?.toolGroups?.includes('edit') ?? false;
+        this.imageGenToggleButton.classList.toggle('agent-u-hidden', !modeHasEdit);
+        // Visual state: active (highlighted) or inactive (ghost)
+        const isEnabled = this.plugin.settings.imageGen?.enabled ?? false;
+        this.imageGenToggleButton.classList.toggle('image-gen-toggle-active', isEnabled);
     }
 
     private showModeMenu(event: MouseEvent): void {

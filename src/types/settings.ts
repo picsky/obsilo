@@ -346,17 +346,23 @@ export interface WebToolsSettings {
 // Image Generation Settings
 // ---------------------------------------------------------------------------
 
+export type ImageGenProvider = 'openai' | 'dashscope';
+
 export interface ImageGenSettings {
     /** Master toggle — when false, generate_image tool is hidden from LLM */
     enabled: boolean;
-    /** OpenAI-compatible base URL for image generation API (e.g. https://api.siliconflow.cn/v1) */
+    /** Provider type - determines API format */
+    provider: ImageGenProvider;
+    /** API endpoint URL (full URL for the image generation endpoint) */
     baseUrl: string;
     /** API key for the image generation service */
     apiKey: string;
-    /** Model identifier (e.g. "dall-e-3", "black-forest-labs/FLUX.1-schnell") */
+    /** Model identifier (e.g. "dall-e-3", "wanx-v1") */
     model: string;
     /** Image size — provider-dependent (e.g. "1024x1024", "512x512") */
     size: string;
+    /** Style prompt suffix — appended to every image prompt for consistent style */
+    stylePrompt: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -723,10 +729,12 @@ export const DEFAULT_SETTINGS: ObsidianAgentSettings = {
 
     imageGen: {
         enabled: false,
+        provider: 'openai',
         baseUrl: '',
         apiKey: '',
         model: '',
         size: '1024x1024',
+        stylePrompt: '',
     },
 
     enableChatHistory: true,

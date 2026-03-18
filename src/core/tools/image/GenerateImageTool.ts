@@ -161,30 +161,64 @@ export class GenerateImageTool extends BaseTool<'generate_image'> {
         const savePath = normalizePath(`${imageDir}/${safeName}`);
 
         const imageSize = size ?? imageSettings.size ?? '1024x1024';
+        const provider = imageSettings.provider ?? 'openai';
+
+        // Append global style suffix if configured
+        const styleSuffix = imageSettings.stylePrompt?.trim();
+        const finalPrompt = styleSuffix ? `${prompt}. ${styleSuffix}` : prompt;
 
         try {
-            callbacks.log(`Generating image: "${prompt.slice(0, 80)}${prompt.length > 80 ? '...' : ''}"`);
+            callbacks.log(`Generating image: "${finalPrompt.slice(0, 80)}${finalPrompt.length > 80 ? '...' : ''}"`);
 
-            // Call OpenAI-compatible image generation API
-            const baseUrl = imageSettings.baseUrl.replace(/\/+$/, '');
-            const apiUrl = `${baseUrl}/images/generations`;
-
+            // Call image generation API based on provider type
+            const apiUrl = imageSettings.baseUrl.replace(/\/+$/, '');
             const TIMEOUT_MS = 120_000;
+
+            let requestBody: Record<string, unknown>;
+            let headers: Record<string, string>;
+
+            if (provider === 'dashscope') {
+                // Alibaba Cloud DashScope multimodal-generation API
+                // Uses qwen-image model, synchronous response with image URL
+                requestBody = {
+                    model: imageSettings.model || 'qwen-image-2.0',
+                    input: {
+                        messages: [
+                            {
+                                role: 'user',
+                                content: [{ text: finalPrompt }],
+                            },
+                        ],
+                    },
+                    parameters: {
+                        result_format: 'message',
+                        n: 1,
+                    },
+                };
+                headers = {
+                    'Authorization': `Bearer ${imageSettings.apiKey}`,
+                };
+            } else {
+                // OpenAI-compatible format (OpenAI, SiliconFlow, Replicate, etc.)
+                requestBody = {
+                    model: imageSettings.model,
+                    prompt: finalPrompt,
+                    n: 1,
+                    size: imageSize,
+                    response_format: 'b64_json',
+                };
+                headers = {
+                    'Authorization': `Bearer ${imageSettings.apiKey}`,
+                };
+            }
+
             const apiResponse = await Promise.race([
                 requestUrl({
                     url: apiUrl,
                     method: 'POST',
                     contentType: 'application/json',
-                    headers: {
-                        'Authorization': `Bearer ${imageSettings.apiKey}`,
-                    },
-                    body: JSON.stringify({
-                        model: imageSettings.model,
-                        prompt,
-                        n: 1,
-                        size: imageSize,
-                        response_format: 'b64_json',
-                    }),
+                    headers,
+                    body: JSON.stringify(requestBody),
                     throw: false,
                 }),
                 new Promise<never>((_, reject) =>
@@ -198,10 +232,16 @@ export class GenerateImageTool extends BaseTool<'generate_image'> {
             if (apiResponse.status >= 400) {
                 let detail = '';
                 try {
-                    detail = JSON.stringify(apiResponse.json);
+                    if (apiResponse.text && apiResponse.text.trim()) {
+                        const parsed = JSON.parse(apiResponse.text);
+                        detail = parsed?.message || parsed?.error?.message || JSON.stringify(parsed);
+                    }
                 } catch {
-                    detail = apiResponse.text;
+                    detail = apiResponse.text?.slice(0, 200) || '';
                 }
+                console.error('[ImageGen] API error:', apiResponse.status, detail);
+                console.error('[ImageGen] Request URL:', apiUrl);
+                console.error('[ImageGen] Request body:', JSON.stringify(requestBody));
                 callbacks.pushToolResult(
                     this.formatError(
                         new Error(`Image generation API error: HTTP ${apiResponse.status}. ${detail}`),
@@ -210,44 +250,93 @@ export class GenerateImageTool extends BaseTool<'generate_image'> {
                 return;
             }
 
-            const data = apiResponse.json as ImageGenApiResponse;
-            const imageData = data?.data?.[0];
+            // Parse response based on provider
+            let imageBytes: ArrayBuffer | null = null;
 
-            if (!imageData) {
+            // Safely parse response JSON
+            let responseJson: Record<string, unknown>;
+            try {
+                responseJson = apiResponse.text ? JSON.parse(apiResponse.text) : apiResponse.json;
+            } catch {
+                console.error('[ImageGen] Failed to parse response JSON');
                 callbacks.pushToolResult(
-                    this.formatError(new Error('Image generation API returned no image data.')),
+                    this.formatError(new Error('Failed to parse API response as JSON.')),
                 );
                 return;
             }
 
-            // Get image binary data
-            let imageBytes: ArrayBuffer;
+            if (provider === 'dashscope') {
+                // DashScope multimodal-generation: synchronous response with image URL
+                const output = responseJson?.output as {
+                    choices?: Array<{
+                        message?: {
+                            content?: Array<{ image?: string }>
+                        }
+                    }>
+                } | undefined;
 
-            if (imageData.b64_json) {
-                // Decode base64 to binary
-                imageBytes = this.base64ToArrayBuffer(imageData.b64_json);
-            } else if (imageData.url) {
-                // Fetch image from URL
-                callbacks.log('Downloading generated image from URL...');
+                const imageUrl = output?.choices?.[0]?.message?.content?.[0]?.image;
+
+                if (!imageUrl) {
+                    callbacks.pushToolResult(
+                        this.formatError(new Error('DashScope did not return an image URL.')),
+                    );
+                    return;
+                }
+
+                callbacks.log('Downloading generated image from DashScope...');
                 const imgResponse = await requestUrl({
-                    url: imageData.url,
+                    url: imageUrl,
                     method: 'GET',
                     throw: false,
                 });
                 if (imgResponse.status >= 400) {
                     callbacks.pushToolResult(
-                        this.formatError(
-                            new Error(`Failed to download generated image: HTTP ${imgResponse.status}`),
-                        ),
+                        this.formatError(new Error(`Failed to download image: HTTP ${imgResponse.status}`)),
                     );
                     return;
                 }
                 imageBytes = imgResponse.arrayBuffer;
             } else {
+                // OpenAI-compatible format
+                const data = apiResponse.json as ImageGenApiResponse;
+                const imageData = data?.data?.[0];
+
+                if (!imageData) {
+                    callbacks.pushToolResult(
+                        this.formatError(new Error('Image generation API returned no image data.')),
+                    );
+                    return;
+                }
+
+                if (imageData.b64_json) {
+                    imageBytes = this.base64ToArrayBuffer(imageData.b64_json);
+                } else if (imageData.url) {
+                    callbacks.log('Downloading generated image from URL...');
+                    const imgResponse = await requestUrl({
+                        url: imageData.url,
+                        method: 'GET',
+                        throw: false,
+                    });
+                    if (imgResponse.status >= 400) {
+                        callbacks.pushToolResult(
+                            this.formatError(new Error(`Failed to download image: HTTP ${imgResponse.status}`)),
+                        );
+                        return;
+                    }
+                    imageBytes = imgResponse.arrayBuffer;
+                } else {
+                    callbacks.pushToolResult(
+                        this.formatError(new Error('Image generation API returned neither b64_json nor url.')),
+                    );
+                    return;
+                }
+            }
+
+            // Ensure imageBytes was set
+            if (!imageBytes) {
                 callbacks.pushToolResult(
-                    this.formatError(
-                        new Error('Image generation API returned neither b64_json nor url.'),
-                    ),
+                    this.formatError(new Error('Failed to retrieve image data from API response.')),
                 );
                 return;
             }
@@ -268,19 +357,10 @@ export class GenerateImageTool extends BaseTool<'generate_image'> {
 
             // Build Markdown embed (relative path from note directory)
             const relativeName = `./${IMAGE_SUBFOLDER}/${safeName}`;
-            const altText = prompt.length > 100 ? prompt.slice(0, 100) + '...' : prompt;
+            const altText = safeName.replace(/\.png$/, '');
             const embed = `![${altText}](${relativeName})`;
 
-            const revisedPrompt = imageData.revised_prompt
-                ? `\nRevised prompt: ${imageData.revised_prompt}`
-                : '';
-
-            callbacks.pushToolResult(
-                `<image_generated>\n` +
-                `Image saved to: ${savePath}\n` +
-                `Markdown embed: ${embed}${revisedPrompt}\n` +
-                `</image_generated>`,
-            );
+            callbacks.pushToolResult(`OK: ${embed}`);
             callbacks.log(`Image saved: ${savePath}`);
         } catch (error) {
             callbacks.pushToolResult(this.formatError(error));

@@ -278,12 +278,18 @@ export class OpenAiProvider implements ApiHandler {
                     let input: Record<string, unknown> = {};
                     try {
                         input = JSON.parse(acc.argumentsJson);
-                    } catch (e) {
-                        yield {
-                            type: 'text',
-                            text: `[Tool input parse error for "${acc.name}": ${(e as Error).message}]`,
-                        } satisfies ApiStreamChunk;
-                        continue;
+                    } catch {
+                        // Attempt JSON repair for common LLM output issues
+                        try {
+                            input = repairToolCallJson(acc.argumentsJson);
+                            console.debug(`[OpenAI] Repaired malformed JSON for tool "${acc.name}"`);
+                        } catch (e2) {
+                            yield {
+                                type: 'text',
+                                text: `[Tool input parse error for "${acc.name}": ${(e2 as Error).message}]`,
+                            } satisfies ApiStreamChunk;
+                            continue;
+                        }
                     }
                     yield {
                         type: 'tool_use',
@@ -374,4 +380,92 @@ export class OpenAiProvider implements ApiHandler {
             },
         }));
     }
+}
+
+// ---------------------------------------------------------------------------
+// JSON repair for malformed LLM tool call arguments
+// Handles: unescaped control chars, truncated JSON, unescaped quotes in strings
+// ---------------------------------------------------------------------------
+
+function repairToolCallJson(raw: string): Record<string, unknown> {
+    let json = raw.trim();
+
+    // 1. Fix unescaped control characters inside JSON string values
+    //    (newlines, tabs that LLMs sometimes emit raw inside strings)
+    json = json.replace(/(?<=:\s*"(?:[^"\\]|\\.)*)[\n\r\t]+(?=[^"]*")/g, (m) =>
+        m.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t'),
+    );
+
+    // 2. More aggressive: escape all literal newlines inside strings
+    //    Walk through the string tracking whether we're inside a JSON string
+    const chars: string[] = [];
+    let inString = false;
+    let escaped = false;
+    for (let i = 0; i < json.length; i++) {
+        const ch = json[i];
+        if (escaped) {
+            chars.push(ch);
+            escaped = false;
+            continue;
+        }
+        if (ch === '\\' && inString) {
+            chars.push(ch);
+            escaped = true;
+            continue;
+        }
+        if (ch === '"') {
+            inString = !inString;
+            chars.push(ch);
+            continue;
+        }
+        if (inString && ch === '\n') {
+            chars.push('\\n');
+            continue;
+        }
+        if (inString && ch === '\r') {
+            chars.push('\\r');
+            continue;
+        }
+        if (inString && ch === '\t') {
+            chars.push('\\t');
+            continue;
+        }
+        chars.push(ch);
+    }
+    json = chars.join('');
+
+    // 3. Try parsing after control-char fix
+    try {
+        return JSON.parse(json);
+    } catch {
+        // continue to next repair
+    }
+
+    // 4. Close truncated JSON (missing closing braces/brackets)
+    let openBraces = 0;
+    let openBrackets = 0;
+    let inStr = false;
+    let esc = false;
+    for (const ch of json) {
+        if (esc) { esc = false; continue; }
+        if (ch === '\\' && inStr) { esc = true; continue; }
+        if (ch === '"') { inStr = !inStr; continue; }
+        if (inStr) continue;
+        if (ch === '{') openBraces++;
+        if (ch === '}') openBraces--;
+        if (ch === '[') openBrackets++;
+        if (ch === ']') openBrackets--;
+    }
+
+    // Close any unclosed string
+    if (inStr) json += '"';
+
+    // Remove trailing comma before closing
+    json = json.replace(/,\s*$/, '');
+
+    // Add missing closing brackets/braces
+    while (openBrackets > 0) { json += ']'; openBrackets--; }
+    while (openBraces > 0) { json += '}'; openBraces--; }
+
+    return JSON.parse(json);
 }
